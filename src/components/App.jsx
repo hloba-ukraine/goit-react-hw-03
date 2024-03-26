@@ -1,62 +1,51 @@
 import { useEffect, useState } from "react";
-import Description from "./Description/Descriptions";
-import Options from "./Options/Options";
-import Feedback from "./Feedback/Feedback";
-import css from "./App.module.css";
-import Notification from "./Feedback/Notification";
-const initialCountFeedback = {
-  good: 0,
-  neutral: 0,
-  bad: 0,
-};
-
+import ContactList from "./ContactList/ContactList";
+import SearchBox from "./SearchBox/SearchBox";
+import ContactForm from "./ContactForm/ContactForm";
+import { nanoid } from "nanoid";
+const initialContact = [
+  { id: "id-1", name: "Rosie Simpson", number: "459-12-56" },
+  { id: "id-2", name: "Hermione Kline", number: "443-89-12" },
+  { id: "id-3", name: "Eden Clements", number: "645-17-79" },
+  { id: "id-4", name: "Annie Copeland", number: "227-91-26" },
+];
 export default function App() {
-  const [feedbacks, setFeedback] = useState(() => {
-    const stringifiedFeedbacks = localStorage.getItem("feedbackValues");
-    const feedbackParse =
-      JSON.parse(stringifiedFeedbacks) ?? initialCountFeedback;
-    return feedbackParse;
+  const [contacts, setContacts] = useState(() => {
+    const stringifiedContacts = localStorage.getItem("contacts");
+    const parsedContacts = JSON.parse(stringifiedContacts) ?? initialContact;
+    return parsedContacts;
   });
-  const handleResetFeedback = () => {
-    setFeedback(initialCountFeedback);
-  };
-
-  const handleLogFeedback = (feedbackName) => {
-    setFeedback({ ...feedbacks, [feedbackName]: feedbacks[feedbackName] + 1 });
-  };
-
-  const feedbackTotal = Object.values(feedbacks).reduce(
-    (acc, curr) => acc + curr,
-    0
-  );
-  const positive =
-    feedbackTotal === 0
-      ? 0
-      : Math.round(
-          ((feedbacks.good + feedbacks.neutral) / feedbackTotal) * 100
-        );
-
   useEffect(() => {
-    localStorage.setItem("feedbackValues", JSON.stringify(feedbacks));
-  }, [feedbacks]);
-
+    localStorage.setItem("contacts", JSON.stringify(contacts));
+  }, [contacts]);
+  const OnDeleteContact = (event) => {
+    setContacts((prevContacts) =>
+      prevContacts.filter((contact) => contact.id !== event)
+    );
+  };
+  const [filter, setFilter] = useState("");
+  const onChangeFilter = (event) => {
+    setFilter(event.target.value);
+  };
+  const filterContacts = contacts.filter((contact) =>
+    contact.name.toLowerCase().includes(filter.toLowerCase())
+  );
+  const onAddContact = (formData) => {
+    const finalContact = {
+      ...formData,
+      id: nanoid(),
+    };
+    setContacts((prevContacts) => [...prevContacts, finalContact]);
+  };
   return (
-    <div className={css.box}>
-      <Description />
-      <Options
-        handleResetFeedback={handleResetFeedback}
-        handleLogFeedback={handleLogFeedback}
-        total={feedbackTotal}
+    <div>
+      <h1>Phonebook</h1>
+      <ContactForm onAddContact={onAddContact} />
+      <SearchBox value={filter} onChangeFilter={onChangeFilter} />
+      <ContactList
+        contacts={filterContacts}
+        OnDeleteContact={OnDeleteContact}
       />
-      {feedbackTotal === 0 ? (
-        <Notification />
-      ) : (
-        <Feedback
-          feedbacks={feedbacks}
-          total={feedbackTotal}
-          positive={positive}
-        />
-      )}
     </div>
   );
 }
